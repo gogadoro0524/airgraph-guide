@@ -59,15 +59,19 @@ No token needs to be pasted for OAuth-capable clients.
 
 ### Hermes
 
-Hermes currently works best with an Airgraph `agk_...` token. First create a
-token in the Airgraph web app:
+Hermes currently works best with an Airgraph `agk_...` token. Use the dedicated
+Hermes connect page:
 
-1. Open Airgraph.
-2. Go to **Settings -> 에이전트 연결 토큰**.
-3. Choose **Hermes** and create a token.
-4. Copy the `agk_...` value once.
+```text
+https://app.airgraph.cloud/connect/hermes
+```
 
-Then add Airgraph to your named Hermes profile:
+That page creates a Hermes agent token, shows it once, and gives the human a
+copy-paste prompt they can send to their Hermes agent. If you are an AI agent
+setting this up, open or share that link, ask the human to create/copy the
+`agk_...` token, then continue with the config below.
+
+Then add Airgraph to the active named Hermes profile:
 
 ```yaml
 mcp_servers:
@@ -129,18 +133,9 @@ Use this for Hermes, or for any client that does not support OAuth.
 1. Open the Airgraph web app.
 2. Go to **Settings -> 에이전트 연결 토큰**.
 3. Create a new token and copy the `agk_...` value.
-4. Configure your client with:
+4. Configure your client with an `Authorization` HTTP header whose value is `Bearer ` plus the copied value.
 
-```http
-Authorization: Bearer agk_your_token
-```
-
-Claude Code example:
-
-```bash
-claude mcp add --transport http airgraph https://whale-app-kfijw.ondigitalocean.app/mcp \
-  --header "Authorization: Bearer agk_your_token"
-```
+For command-line clients, pass the same `Authorization` header using that client's documented header option.
 
 ## Project-Scoped Client Setup
 
@@ -350,9 +345,12 @@ Restart or open a new agent session after changing MCP config or syncing skills.
 
 1. Pick the target client: Hermes, Claude Code, Codex, or another remote MCP
    client.
-2. For Hermes, ask the human to create an `agk_...` token in Airgraph settings,
-   store it in `AIRGRAPH_TOKEN`, and write a bearer `Authorization` header. Do
-   not write `auth: oauth` for Hermes by default.
+2. For Hermes, send the human to `https://app.airgraph.cloud/connect/hermes` to
+   create an `agk_...` token. Store it as `AIRGRAPH_TOKEN` in the active Hermes
+   profile environment or profile-local `.env`; never paste the raw token into
+   committed config or chat logs. Write a bearer `Authorization` header using
+   `Bearer ${AIRGRAPH_TOKEN}` and do **not** write `auth: oauth` for Hermes by
+   default.
 3. For Claude Code, Codex, VS Code, Cursor, or Claude Desktop, add the hosted MCP
    URL with the client-specific config above and complete OAuth when prompted.
    If the client shows a device code, send the human to the verification URL
@@ -362,6 +360,27 @@ Restart or open a new agent session after changing MCP config or syncing skills.
    and store it in `AIRGRAPH_TOKEN`, not directly in committed config.
 5. For ambient skills, sync only the Airgraph skills routed to the target's
    `그룹` label.
+
+```airgraph-agent-setup
+client: hermes
+mcp_url: https://whale-app-kfijw.ondigitalocean.app/mcp
+auth: bearer
+token_env: AIRGRAPH_TOKEN
+token_create_url: https://app.airgraph.cloud/connect/hermes
+config:
+  mcp_servers:
+    airgraph:
+      url: https://whale-app-kfijw.ondigitalocean.app/mcp
+      enabled: true
+      headers:
+        Authorization: Bearer ${AIRGRAPH_TOKEN}
+  skills:
+    external_dirs:
+      - airgraph-skills
+verify:
+  - hermes mcp list
+  - hermes mcp test airgraph
+```
 
 ## What Your Agent Gets
 
